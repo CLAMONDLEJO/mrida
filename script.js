@@ -1,3 +1,54 @@
+
+(function(){
+  const offerModule = document.getElementById('offerPopupModule');
+  const offerImgEl = document.getElementById('offerImgModule');
+  const offerCloseBtn = offerModule ? offerModule.querySelector('.offer-popup-close') : null;
+  const offerOverlay = offerModule ? offerModule.querySelector('.offer-popup-overlay') : null;
+
+  // helpers
+  function openOffer() {
+    if (!offerModule) return;
+    offerModule.classList.remove('hidden');
+    offerModule.setAttribute('aria-hidden', 'false');
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeOffer() {
+    if (!offerModule) return;
+    offerModule.classList.add('hidden');
+    offerModule.setAttribute('aria-hidden', 'true');
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+
+  // show only if image src exists and loads successfully
+  if (offerImgEl && offerImgEl.getAttribute('src') && offerImgEl.getAttribute('src').trim() !== '') {
+    const loader = new Image();
+    loader.onload = function() {
+      // wait 3 seconds after successful load
+      setTimeout(openOffer, 3000);
+    };
+    loader.onerror = function() {
+      // fail silently — do not show popup if image cannot be loaded
+    };
+    loader.src = offerImgEl.getAttribute('src');
+  }
+
+  // safe event hookups
+  if (offerCloseBtn) offerCloseBtn.addEventListener('click', closeOffer);
+  if (offerOverlay) offerOverlay.addEventListener('click', closeOffer);
+
+  // ESC closes
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && offerModule && !offerModule.classList.contains('hidden')) closeOffer();
+  });
+
+  // avoid accidental propagation when clicking inside card
+  if (offerModule) {
+    offerModule.querySelector('.offer-popup-card').addEventListener('click', (e) => e.stopPropagation());
+  }
+})();
+
 // nav bar
 const navUniqueToggle = document.getElementById("navUniqueToggle");
 const navUniqueLinks = document.getElementById("navUniqueLinks");
@@ -74,6 +125,60 @@ function setupCarousel(trackId, prevId, nextId) {
 setupCarousel("carouselTrack1", "prevBtn1", "nextBtn1");
 setupCarousel("carouselTrack2", "prevBtn2", "nextBtn2");
 setupCarousel("carouselTrack3", "prevBtn3", "nextBtn3");
+
+// popup code
+
+(function(){
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.open-product-popup-btn');
+    if (!btn) return;
+
+    const popupId = btn.getAttribute('data-popup-id');
+    const popup = document.getElementById(popupId);
+    if (!popup) return;
+
+    // 🔥 move popup to body before showing (fix for carousel containment)
+    document.body.appendChild(popup);
+
+    popup.classList.remove('hidden');
+    popup.setAttribute('aria-hidden','false');
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+  });
+
+  // close logic
+  document.addEventListener('click', function(e){
+    const overlay = e.target.closest('.product-popup-overlay');
+    const closeBtn = e.target.closest('.product-popup-close');
+    if (overlay || closeBtn) {
+      const popup = (overlay ? document.getElementById(overlay.getAttribute('data-target')) : closeBtn.closest('.product-popup-module'));
+      if (popup) {
+        popup.classList.add('hidden');
+        popup.setAttribute('aria-hidden','true');
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+      }
+    }
+  });
+
+  // ESC key close
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.product-popup-module:not(.hidden)').forEach(p => {
+        p.classList.add('hidden');
+        p.setAttribute('aria-hidden','true');
+      });
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    }
+  });
+
+  // Prevent overlay close when clicking inside popup-card
+  document.addEventListener('click', function(e){
+    const inside = e.target.closest('.product-popup-card');
+    if (inside) e.stopPropagation();
+  });
+})();
 
 // 4th section galary
 
